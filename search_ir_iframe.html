@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>IR 공시 검색</title>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f4f4f4; padding: 30px; }
+        h1 { text-align: center; color: #333; }
+        .input-group { text-align: center; margin: 20px 0; }
+        input[type=text] {
+            padding: 10px; width: 250px; margin: 5px;
+            border: 1px solid #ccc; border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px; background: #007bff; color: white;
+            border: none; border-radius: 5px; cursor: pointer;
+            margin-top: 10px;
+        }
+        .results { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 30px; }
+        .card {
+            background: white; padding: 15px; border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); width: 300px;
+        }
+        .card h2 { font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
+        .card ul { padding-left: 20px; }
+        .card li { margin-bottom: 8px; font-size: 0.95em; }
+        .card li span { color: gray; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <h1>🔍 IR 공시 기업 검색</h1>
+    <div class="input-group">
+        <input type="text" id="company1" placeholder="기업명 1">
+        <input type="text" id="company2" placeholder="기업명 2">
+        <input type="text" id="company3" placeholder="기업명 3">
+        <br>
+        <button onclick="searchIR()">공시 검색하기</button>
+    </div>
+    <div id="resultArea" class="results"></div>
+
+    <script>
+        async function fetchIR(company) {
+            const encoded = encodeURIComponent(company);
+            const url = `https://dart.fss.or.kr/dsac001/search.ax?acptno=&keyword=${encoded}`;
+            const res = await fetch(url);
+            const text = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            const list = doc.querySelectorAll('ul.searchList > li');
+            let results = [];
+            for (let li of list) {
+                const title = li.querySelector('a')?.textContent.trim();
+                const link = "https://dart.fss.or.kr" + li.querySelector('a')?.getAttribute('href');
+                const date = li.querySelector('.date')?.textContent.trim() || '';
+                if (title && (title.includes('IR') || title.includes('설명회') || title.includes('실적'))) {
+                    results.push({ title, link, date });
+                    if (results.length >= 10) break;
+                }
+            }
+            return results;
+        }
+
+        async function searchIR() {
+            const c1 = document.getElementById('company1').value.trim();
+            const c2 = document.getElementById('company2').value.trim();
+            const c3 = document.getElementById('company3').value.trim();
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = '';
+            for (let company of [c1, c2, c3]) {
+                if (company === '') continue;
+                const data = await fetchIR(company);
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<h2>${company}</h2><ul>` +
+                    data.map(d => `<li><span>${d.date}</span> - <a href="${d.link}" target="_blank">${d.title}</a></li>`).join('') +
+                    `</ul>`;
+                resultArea.appendChild(card);
+            }
+        }
+    </script>
+</body>
+</html>
