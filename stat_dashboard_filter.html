@@ -1,1 +1,144 @@
-/mnt/data/stat_dashboard/stat_dashboard_filter.html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>공시 통계 대시보드 (필터 포함)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; background: #f9f9f9; }
+    h1 { color: #333; }
+    .controls { margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 12px; }
+    .chart-container { width: 90%; max-width: 800px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    canvas { margin-top: 20px; }
+    label, select, input { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <h1>📊 공시 통계 대시보드 (필터 포함)</h1>
+  <div class="controls">
+    <label>기업:</label>
+    <select id="corpFilter">
+      <option value="all">전체</option>
+    </select>
+    <label>시작일:</label>
+    <input type="date" id="startDate">
+    <label>종료일:</label>
+    <input type="date" id="endDate">
+    <label>공시 종류:</label>
+    <select id="reportFilter">
+      <option value="all">전체</option>
+    </select>
+    <button onclick="applyFilters()">적용</button>
+  </div>
+
+  <div class="chart-container">
+    <h2>📅 날짜별 공시 건수</h2>
+    <canvas id="dateChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <h2>🏢 기업별 공시 건수</h2>
+    <canvas id="corpChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <h2>📄 보고서 종류별 분포</h2>
+    <canvas id="reportChart"></canvas>
+  </div>
+
+  <script>
+    let originalData = [];
+    let dateChart, corpChart, reportChart;
+
+    async function fetchData() {
+      const response = await fetch('sample_data_extended.json');
+      originalData = await response.json();
+      populateFilters();
+      applyFilters();
+    }
+
+    function populateFilters() {
+      const corpSet = new Set();
+      const reportSet = new Set();
+      originalData.forEach(item => {
+        corpSet.add(item.corp_name);
+        reportSet.add(item.report_nm);
+      });
+      const corpFilter = document.getElementById('corpFilter');
+      corpSet.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c;
+        option.textContent = c;
+        corpFilter.appendChild(option);
+      });
+      const reportFilter = document.getElementById('reportFilter');
+      reportSet.forEach(r => {
+        const option = document.createElement('option');
+        option.value = r;
+        option.textContent = r;
+        reportFilter.appendChild(option);
+      });
+    }
+
+    function applyFilters() {
+      const corpVal = document.getElementById('corpFilter').value;
+      const reportVal = document.getElementById('reportFilter').value;
+      const startVal = document.getElementById('startDate').value;
+      const endVal = document.getElementById('endDate').value;
+
+      const filtered = originalData.filter(item => {
+        const dateStr = item.rcept_dt;
+        const dateFormatted = `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
+        return (corpVal === 'all' || item.corp_name === corpVal) &&
+               (reportVal === 'all' || item.report_nm === reportVal) &&
+               (!startVal || dateFormatted >= startVal) &&
+               (!endVal || dateFormatted <= endVal);
+      });
+
+      const dateCount = {};
+      const corpCount = {};
+      const reportCount = {};
+      filtered.forEach(item => {
+        dateCount[item.rcept_dt] = (dateCount[item.rcept_dt] || 0) + 1;
+        corpCount[item.corp_name] = (corpCount[item.corp_name] || 0) + 1;
+        reportCount[item.report_nm] = (reportCount[item.report_nm] || 0) + 1;
+      });
+
+      const sortedDates = Object.keys(dateCount).sort();
+
+      updateChart(dateChart, sortedDates, sortedDates.map(d => dateCount[d]));
+      updateChart(corpChart, Object.keys(corpCount), Object.values(corpCount));
+      updateChart(reportChart, Object.keys(reportCount), Object.values(reportCount));
+    }
+
+    function updateChart(chart, labels, data) {
+      if (!chart) return;
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = data;
+      chart.update();
+    }
+
+    function createCharts() {
+      const dateCtx = document.getElementById('dateChart').getContext('2d');
+      const corpCtx = document.getElementById('corpChart').getContext('2d');
+      const reportCtx = document.getElementById('reportChart').getContext('2d');
+
+      dateChart = new Chart(dateCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: '공시 건수', data: [], borderColor: 'blue', backgroundColor: 'lightblue', fill: true }] }
+      });
+
+      corpChart = new Chart(corpCtx, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: '공시 건수', data: [], backgroundColor: '#28a745' }] }
+      });
+
+      reportChart = new Chart(reportCtx, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ label: '공시 비율', data: [], backgroundColor: ['#007bff', '#ffc107', '#17a2b8', '#dc3545'] }] }
+      });
+    }
+
+    createCharts();
+    fetchData();
+  </script>
+</body>
+</html>
