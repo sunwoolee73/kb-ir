@@ -1,93 +1,70 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>OpenDART IR 공시 검색 (로컬 JSON)</title>
-    <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background: #f9f9f9; padding: 30px; }
-        h1 { text-align: center; color: #222; }
-        .input-group { text-align: center; margin: 20px 0; }
-        input[type=text] {
-            padding: 10px; width: 250px; margin: 5px;
-            border: 1px solid #ccc; border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px; background: #007bff; color: white;
-            border: none; border-radius: 5px; cursor: pointer;
-            margin-top: 10px;
-        }
-        .results { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 30px; }
-        .card {
-            background: white; padding: 15px; border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1); width: 300px;
-        }
-        .card h2 { font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
-        .card ul { padding-left: 20px; }
-        .card li { margin-bottom: 8px; font-size: 0.95em; }
-        .card li span { color: gray; font-size: 0.85em; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>OpenDART 기반 IR 공시 검색</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f9f9f9; padding: 30px; }
+    h1 { text-align: center; color: #222; }
+    .input-group { text-align: center; margin: 20px 0; }
+    input[type=text] {
+      padding: 10px; width: 250px; margin: 5px;
+      border: 1px solid #ccc; border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px; background: #007bff; color: white;
+      border: none; border-radius: 5px; cursor: pointer;
+      margin-top: 10px;
+    }
+    .results { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 30px; }
+    .card {
+      background: white; padding: 15px; border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); width: 300px;
+    }
+    .card h2 { font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
+    .card p { margin: 4px 0; font-size: 0.9em; }
+  </style>
 </head>
 <body>
-    <h1>🔍 OpenDART 기반 IR 공시 검색</h1>
-    <div class="input-group">
-        <input type="text" id="company1" placeholder="기업명 1">
-        <input type="text" id="company2" placeholder="기업명 2">
-        <input type="text" id="company3" placeholder="기업명 3">
-        <br>
-        <button onclick="searchIR()">공시 검색하기</button>
-    </div>
-    <div id="resultArea" class="results"></div>
+  <h1>🔍 OpenDART 기반 IR 공시 검색</h1>
+  <div class="input-group">
+    <input type="text" id="corp1" placeholder="삼성전자" />
+    <input type="text" id="corp2" placeholder="현대차" />
+    <input type="text" id="corp3" placeholder="기아" />
+    <br />
+    <button onclick="searchIR()">공시 검색하기</button>
+  </div>
+  <div class="results" id="results"></div>
 
-    <script>
-        const apiKey = "fc43af46c1bc915dce2fc6e156971f2569e603b3";
-        let corpMap = {{}};
+  <script>
+    const corp_codes = [
+      { "corp_name": "삼성전자", "corp_code": "00126380" },
+      { "corp_name": "SK하이닉스", "corp_code": "00066080" },
+      { "corp_name": "현대차", "corp_code": "00538000" },
+      { "corp_name": "기아", "corp_code": "00027000" },
+      { "corp_name": "LG전자", "corp_code": "06657000" },
+      { "corp_name": "NAVER", "corp_code": "03542000" },
+      { "corp_name": "카카오", "corp_code": "03572000" },
+      { "corp_name": "셀트리온", "corp_code": "06827000" }
+    ];
 
-        fetch('corp_codes.json')
-            .then(res => res.json())
-            .then(data => {{
-                for (let corp of data) {{
-                    corpMap[corp.corp_name] = corp.corp_code;
-                }}
-            }});
+    function searchIR() {
+      const inputs = [document.getElementById("corp1").value.trim(), document.getElementById("corp2").value.trim(), document.getElementById("corp3").value.trim()];
+      const results = document.getElementById("results");
+      results.innerHTML = "";
 
-        async function getIR(corpCode) {{
-            const today = new Date();
-            const from = today.getFullYear() + "0101";
-            const to = today.toISOString().slice(0,10).replace(/-/g, "");
-            const url = `https://opendart.fss.or.kr/api/list.json?crtfc_key=${{apiKey}}&corp_code=${{corpCode}}&bgn_de=${{from}}&end_de=${{to}}&page_count=100`;
-            const res = await fetch(url);
-            const data = await res.json();
-            if (!data.list) return [];
-            return data.list.filter(item =>
-                item.report_nm.includes("IR") || item.report_nm.includes("설명회") || item.report_nm.includes("실적")
-            ).slice(0, 10);
-        }}
-
-        async function searchIR() {{
-            const names = [
-                document.getElementById('company1').value.trim(),
-                document.getElementById('company2').value.trim(),
-                document.getElementById('company3').value.trim()
-            ];
-            const resultArea = document.getElementById('resultArea');
-            resultArea.innerHTML = '';
-            for (let name of names) {{
-                if (name === '') continue;
-                const corpCode = corpMap[name];
-                if (!corpCode) {{
-                    resultArea.innerHTML += `<div class='card'><h2>${{name}}</h2><p>❌ 기업 코드 없음</p></div>`;
-                    continue;
-                }}
-                const irs = await getIR(corpCode);
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `<h2>${{name}}</h2><ul>` +
-                    irs.map(ir => `<li><span>${{ir.rcept_dt}}</span> - <a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${{ir.rcept_no}}" target="_blank">${{ir.report_nm}}</a></li>`).join('') +
-                    `</ul>`;
-                resultArea.appendChild(card);
-            }}
-        }}
-    </script>
+      inputs.forEach(name => {
+        if (!name) return;
+        const found = corp_codes.find(c => c.corp_name.includes(name));
+        if (found) {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `<h2>${found.corp_name}</h2>
+                           <p><strong>고유코드:</strong> ${found.corp_code}</p>`;
+          results.appendChild(div);
+        }
+      });
+    }
+  </script>
 </body>
 </html>
