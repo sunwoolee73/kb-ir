@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>OpenDART IR 공시 검색 예시</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f2f2f2; padding: 20px; }
+    h1 { text-align: center; color: #333; }
+    .results { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 30px; }
+    .card {
+      background: #fff; border-radius: 12px; padding: 20px; width: 320px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .card h2 { margin-bottom: 10px; color: #007acc; }
+    .report { margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <h1>🔍 OpenDART IR 공시 예시</h1>
+  <div id="results" class="results"></div>
+
+  <script>
+    fetch("sample_data.json")
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("results");
+        data.forEach(corp => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `<h2>${corp.corp_name}</h2>
+            <p><strong>고유코드:</strong> ${corp.corp_code}</p>
+            ${corp.announcements.map(item => `
+              <div class="report">
+                📄 <strong>${item.report_nm}</strong><br>
+                📅 ${item.rcept_dt}<br>
+                🔗 <a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${item.rcept_no}" target="_blank">공시보기</a>
+              </div>
+            `).join("")}`;
+          container.appendChild(card);
+        });
+      });
+  </script>
+</body>
+</html>
