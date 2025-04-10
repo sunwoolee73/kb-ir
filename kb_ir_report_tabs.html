@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>다기업 IR 공시 리스트</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .tab-button {
+      padding: 8px 16px;
+      background: #e0e7ff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background: #3b82f6;
+      color: white;
+    }
+    .tab-content {
+      display: none;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .tab-content.active {
+      display: block;
+    }
+    ul {
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 다기업 IR 공시 리스트</h1>
+  <p>업데이트: 2025-04-10 11:33:18</p>
+  <div class="tabs">
+    <button class="tab-button active" onclick="openTab('tab0')">KB금융</button>
+<button class="tab-button " onclick="openTab('tab1')">삼성전자</button>
+
+  </div>
+  <div id="tab0" class="tab-content active">
+<h2>KB금융 IR 공시 리스트</h2>
+<ul>
+<li><strong>2025-03-29</strong> - <a href="https://example.com/kb1" target="_blank">KB금융지주 기업설명회(IR) 자료</a></li>
+<li><strong>2025-02-13</strong> - <a href="https://example.com/kb2" target="_blank">KB금융지주 2024년 연간 실적 IR</a></li>
+</ul>
+</div>
+<div id="tab1" class="tab-content ">
+<h2>삼성전자 IR 공시 리스트</h2>
+<ul>
+<li><strong>2025-03-05</strong> - <a href="https://example.com/ss1" target="_blank">삼성전자 2024년 4분기 실적 발표</a></li>
+<li><strong>2024-12-20</strong> - <a href="https://example.com/ss2" target="_blank">삼성전자 ESG 경영 보고서</a></li>
+</ul>
+</div>
+
+  <script>
+    function openTab(tabId) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(div => div.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach((btn, idx) => {
+        if (tabId === 'tab' + idx) btn.classList.add('active');
+      });
+      document.getElementById(tabId).classList.add('active');
+    }
+  </script>
+</body>
+</html>
