@@ -1,28 +1,32 @@
-{
-  "00126380": [
+[
     {
-      "title": "2025년 1분기 실적 발표",
-      "date": "2025-04-05",
-      "url": "https://example.com/삼성전자_공시1"
+        "corp_name": "삼성전자",
+        "corp_code": "00126380",
+        "disclosures": [
+            {
+                "title": "2025년 1분기 실적 발표",
+                "date": "2025-04-08",
+                "type": "IR자료",
+                "link": "https://dart.fss.or.kr/samsung20250408"
+            },
+            {
+                "title": "주주총회 소집 공고",
+                "date": "2025-03-25",
+                "type": "공고",
+                "link": "https://dart.fss.or.kr/samsung20250325"
+            }
+        ]
     },
     {
-      "title": "삼성전자 신사업 발표",
-      "date": "2025-04-04",
-      "url": "https://example.com/삼성전자_공시2"
+        "corp_name": "현대차",
+        "corp_code": "00538000",
+        "disclosures": [
+            {
+                "title": "연간 경영 실적 발표",
+                "date": "2025-04-05",
+                "type": "IR자료",
+                "link": "https://dart.fss.or.kr/hyundai20250405"
+            }
+        ]
     }
-  ],
-  "00027000": [
-    {
-      "title": "기아 EV 모델 출시",
-      "date": "2025-04-06",
-      "url": "https://example.com/기아_공시1"
-    }
-  ],
-  "00538000": [
-    {
-      "title": "현대차 친환경차 확대 계획",
-      "date": "2025-04-03",
-      "url": "https://example.com/현대차_공시1"
-    }
-  ]
-}
+]
