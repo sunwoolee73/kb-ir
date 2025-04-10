@@ -1,30 +1,32 @@
-{
-  "삼성전자": {
+[
+  {
+    "corp_name": "삼성전자",
     "corp_code": "00126380",
     "reports": [
       {
         "date": "2025-04-08",
-        "type": "IR자료",
+        "category": "IR자료",
         "title": "2025년 1분기 실적 발표",
-        "rcpNo": "20250408000234"
+        "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20250408000123"
       },
       {
         "date": "2025-03-25",
-        "type": "공고",
+        "category": "공고",
         "title": "주주총회 소집 공고",
-        "rcpNo": "20250325000091"
+        "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20250325000456"
       }
     ]
   },
-  "현대차": {
+  {
+    "corp_name": "현대차",
     "corp_code": "00538000",
     "reports": [
       {
         "date": "2025-04-05",
-        "type": "IR자료",
+        "category": "IR자료",
         "title": "연간 경영 실적 발표",
-        "rcpNo": "20250405000112"
+        "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20250405000789"
       }
     ]
   }
-}
+]
