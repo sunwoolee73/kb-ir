@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>기업 공시 검색</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f9f9f9; padding: 20px; }
+    h1 { text-align: center; color: #333; }
+    .search-box { text-align: center; margin-bottom: 20px; }
+    input[type="text"] {
+      padding: 8px; width: 200px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
+    }
+    button {
+      padding: 8px 14px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;
+    }
+    .card-container {
+      display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;
+    }
+    .card {
+      width: 260px; background: white; padding: 15px; border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: 0.3s ease;
+    }
+    .card:hover { transform: scale(1.03); }
+    .corp-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 5px; }
+    .report-name { color: #555; }
+    .date { font-size: 14px; color: #777; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h1>📑 기업 공시 정보 검색</h1>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="예: 삼성전자">
+    <button onclick="searchCorp()">검색</button>
+  </div>
+  <div class="card-container" id="resultCards"></div>
+
+  <script>
+    let allData = [];
+
+    async function loadData() {
+      const res = await fetch("sample_data_extended.json");
+      allData = await res.json();
+    }
+
+    function searchCorp() {
+      const query = document.getElementById("searchInput").value.trim();
+      const container = document.getElementById("resultCards");
+      container.innerHTML = "";
+
+      if (!query) return;
+
+      const results = allData.filter(item => item.corp_name.includes(query));
+      if (results.length === 0) {
+        container.innerHTML = "<p>검색 결과가 없습니다.</p>";
+        return;
+      }
+
+      results.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="corp-name">${item.corp_name}</div>
+          <div class="report-name">${item.report_nm}</div>
+          <div class="date">📅 ${formatDate(item.rcept_dt)}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function formatDate(str) {
+      return `${str.slice(0,4)}-${str.slice(4,6)}-${str.slice(6,8)}`;
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
