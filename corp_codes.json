@@ -4,39 +4,11 @@
     "corp_code": "00126380"
   },
   {
-    "corp_name": "SK하이닉스",
-    "corp_code": "00066080"
-  },
-  {
-    "corp_name": "현대차",
-    "corp_code": "00538000"
-  },
-  {
     "corp_name": "기아",
     "corp_code": "00027000"
   },
   {
-    "corp_name": "LG전자",
-    "corp_code": "06657000"
-  },
-  {
-    "corp_name": "NAVER",
-    "corp_code": "03542000"
-  },
-  {
-    "corp_name": "카카오",
-    "corp_code": "03572000"
-  },
-  {
-    "corp_name": "POSCO홀딩스",
-    "corp_code": "00549000"
-  },
-  {
-    "corp_name": "삼성SDI",
-    "corp_code": "00640000"
-  },
-  {
-    "corp_name": "SK이노베이션",
-    "corp_code": "09677000"
+    "corp_name": "현대차",
+    "corp_code": "00538000"
   }
 ]

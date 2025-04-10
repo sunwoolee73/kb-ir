@@ -1,41 +1,28 @@
-
-[
-  {
-    "corp_name": "삼성전자",
-    "corp_code": "00126380",
-    "announcements": [
-      {
-        "rcept_dt": "20250410",
-        "report_nm": "사업보고서 (2024년)",
-        "rcept_no": "20250410001234"
-      },
-      {
-        "rcept_dt": "20250409",
-        "report_nm": "주주총회소집공고",
-        "rcept_no": "20250409005678"
-      }
-    ]
-  },
-  {
-    "corp_name": "현대차",
-    "corp_code": "00538000",
-    "announcements": [
-      {
-        "rcept_dt": "20250408",
-        "report_nm": "분기보고서 (2024년 1분기)",
-        "rcept_no": "20250408009876"
-      }
-    ]
-  },
-  {
-    "corp_name": "기아",
-    "corp_code": "00027000",
-    "announcements": [
-      {
-        "rcept_dt": "20250407",
-        "report_nm": "투자판단 관련 주요경영사항",
-        "rcept_no": "20250407004321"
-      }
-    ]
-  }
-]
+{
+  "00126380": [
+    {
+      "title": "2025년 1분기 실적 발표",
+      "date": "2025-04-05",
+      "url": "https://example.com/삼성전자_공시1"
+    },
+    {
+      "title": "삼성전자 신사업 발표",
+      "date": "2025-04-04",
+      "url": "https://example.com/삼성전자_공시2"
+    }
+  ],
+  "00027000": [
+    {
+      "title": "기아 EV 모델 출시",
+      "date": "2025-04-06",
+      "url": "https://example.com/기아_공시1"
+    }
+  ],
+  "00538000": [
+    {
+      "title": "현대차 친환경차 확대 계획",
+      "date": "2025-04-03",
+      "url": "https://example.com/현대차_공시1"
+    }
+  ]
+}
