@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>공시 통계 대시보드</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; background: #f9f9f9; }
+    h1 { color: #333; }
+    .chart-container { width: 90%%; max-width: 800px; margin: 40px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    canvas { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>📊 공시 통계 대시보드</h1>
+  <div class="chart-container">
+    <h2>📅 날짜별 공시 건수</h2>
+    <canvas id="dateChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <h2>🏢 기업별 공시 건수</h2>
+    <canvas id="corpChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <h2>📄 보고서 종류별 분포</h2>
+    <canvas id="reportChart"></canvas>
+  </div>
+
+  <script>
+    async function drawCharts() {
+      const response = await fetch('sample_data_extended.json');
+      const data = await response.json();
+
+      // 집계
+      const dateCount = {};
+      const corpCount = {};
+      const reportCount = {};
+
+      data.forEach(item => {
+        dateCount[item.rcept_dt] = (dateCount[item.rcept_dt] || 0) + 1;
+        corpCount[item.corp_name] = (corpCount[item.corp_name] || 0) + 1;
+        reportCount[item.report_nm] = (reportCount[item.report_nm] || 0) + 1;
+      });
+
+      // 날짜 차트
+      new Chart(document.getElementById('dateChart'), {
+        type: 'line',
+        data: {
+          labels: Object.keys(dateCount).sort(),
+          datasets: [{
+            label: '공시 건수',
+            data: Object.entries(dateCount).sort().map(e => e[1]),
+            borderColor: 'blue',
+            backgroundColor: 'lightblue',
+            fill: true
+          }]
+        }
+      });
+
+      // 기업 차트
+      new Chart(document.getElementById('corpChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(corpCount),
+          datasets: [{
+            label: '공시 건수',
+            data: Object.values(corpCount),
+            backgroundColor: ['#007bff', '#28a745', '#ffc107']
+          }]
+        }
+      });
+
+      // 보고서 종류 차트
+      new Chart(document.getElementById('reportChart'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(reportCount),
+          datasets: [{
+            label: '공시 비율',
+            data: Object.values(reportCount),
+            backgroundColor: ['#17a2b8', '#dc3545', '#6f42c1', '#20c997']
+          }]
+        }
+      });
+    }
+
+    drawCharts();
+  </script>
+</body>
+</html>
