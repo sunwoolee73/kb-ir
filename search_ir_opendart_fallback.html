@@ -1,13 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>📑 기업 공시 정보 검색 (OpenDART 연동)</title>
+  <meta charset="UTF-8" />
+  <title>기업 공시 정보 검색</title>
   <style>
     body { font-family: 'Noto Sans KR', sans-serif; background: #f9f9f9; padding: 20px; }
     h1 { text-align: center; color: #333; }
-    .search-box { text-align: center; margin-bottom: 20px; }
+    .search-box { text-align: center; margin-bottom: 20px; position: relative; }
     input[type="text"] {
       padding: 8px; width: 200px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
     }
@@ -25,23 +24,48 @@
     .corp-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 5px; }
     .report-name { color: #555; }
     .date { font-size: 14px; color: #777; margin-top: 5px; }
+
+    .suggestions {
+      position: absolute; top: 38px; left: 50%; transform: translateX(-50%);
+      width: 200px; border: 1px solid #ccc; background: white;
+      border-top: none; border-radius: 0 0 6px 6px; z-index: 99;
+    }
+    .suggestion-item {
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .suggestion-item:hover {
+      background-color: #f0f0f0;
+    }
   </style>
 </head>
 <body>
 
-<h1>📑 기업 공시 정보 검색</h1>
+<h1>📄 기업 공시 정보 검색</h1>
 <div class="search-box">
-  <input id="searchInput" type="text" placeholder="예: 삼성전자" />
+  <input id="searchInput" type="text" placeholder="예: 삼성전자" onkeyup="showSuggestions()" autocomplete="off" />
+  <div id="suggestions" class="suggestions"></div>
   <button onclick="searchCorp()">검색</button>
 </div>
 <div id="resultCards" class="card-container"></div>
 
 <script>
   let allData = [];
+  let corpCodeMap = {};
+  const DART_KEY = "fc43af46c1bc915dce2fc6e156971f2569e603b3";
 
   async function loadData() {
-    const res = await fetch("sample_data_extended.json");
+    const res = await fetch("https://sunwoolee73.github.io/kb-ir/sample_data_extended.json");
     allData = await res.json();
+  }
+
+  async function loadCorpCodes() {
+    const res = await fetch("https://sunwoolee73.github.io/kb-ir/corp_codes.json");
+    const codes = await res.json();
+    corpCodeMap = {};
+    codes.forEach(item => {
+      corpCodeMap[item.corp_name] = item.corp_code;
+    });
   }
 
   function formatDate(str) {
@@ -55,26 +79,12 @@
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
-        <div class="corp-name">${item.corp_name || item.corp_name_kor || '기업명 없음'}</div>
-        <div class="report-name">${item.report_nm || item.report_nm || '보고서명 없음'}</div>
-        <div class="date">📅 ${formatDate(item.rcept_dt || item.rcept_dt || '')}</div>
+        <div class="corp-name">${item.corp_name}</div>
+        <div class="report-name">${item.report_nm}</div>
+        <div class="date">📅 ${formatDate(item.rcept_dt)}</div>
       `;
       container.appendChild(card);
     });
-  }
-
-  async function fetchCorpCode(name) {
-    const res = await fetch("corp_codes.json");
-    const codes = await res.json();
-    const found = codes.find(c => c.corp_name.includes(name));
-    return found ? found.corp_code : null;
-  }
-
-  async function fetchFromOpenDart(corp_code) {
-    const url = `https://opendart.fss.or.kr/api/list.json?crtfc_key=fc43af46c1bc915dce2fc6e156971f2569e603b3&corp_code=${corp_code}&bgn_de=20240101&page_count=3`;
-    const res = await fetch(url);
-    const data = await res.json();
-    return data.list || [];
   }
 
   async function searchCorp() {
@@ -84,30 +94,67 @@
 
     if (!query) return;
 
-    const results = allData.filter(item => item.corp_name.includes(query));
+    const localResults = allData.filter(item => item.corp_name.includes(query));
+    if (localResults.length > 0) {
+      showCards(localResults);
+      return;
+    }
 
-    if (results.length > 0) {
-      showCards(results);
-    } else {
-      const corp_code = await fetchCorpCode(query);
-      if (corp_code) {
-        const dartResults = await fetchFromOpenDart(corp_code);
-        if (dartResults.length > 0) {
-          showCards(dartResults.map(item => ({
-            corp_name: query,
-            report_nm: item.report_nm,
-            rcept_dt: item.rcept_dt
-          })));
-        } else {
-          container.innerHTML = "<p>공시 정보가 없습니다.</p>";
-        }
+    // fallback to OpenDART API
+    const corp_code = corpCodeMap[query];
+    if (!corp_code) {
+      container.innerHTML = "<p>해당 기업을 찾을 수 없습니다.</p>";
+      return;
+    }
+
+    const today = new Date();
+    const past = new Date(today.getTime() - 1000 * 60 * 60 * 24 * 15);
+    const bgn_de = past.toISOString().slice(0,10).replace(/-/g, '');
+    const end_de = today.toISOString().slice(0,10).replace(/-/g, '');
+
+    const apiUrl = `https://opendart.fss.or.kr/api/list.json?crtfc_key=${DART_KEY}&corp_code=${corp_code}&bgn_de=${bgn_de}&end_de=${end_de}&page_count=100`;
+
+    try {
+      const res = await fetch(apiUrl);
+      const result = await res.json();
+      if (result.status === "000" && result.list.length > 0) {
+        const fallbackData = result.list.map(item => ({
+          corp_name: query,
+          report_nm: item.report_nm,
+          rcept_dt: item.rcept_dt
+        }));
+        showCards(fallbackData.slice(0, 10));
       } else {
-        container.innerHTML = "<p>기업명을 찾을 수 없습니다.</p>";
+        container.innerHTML = "<p>공시 결과가 없습니다.</p>";
       }
+    } catch (err) {
+      container.innerHTML = "<p>오류 발생: OpenDART 요청 실패</p>";
     }
   }
 
+  function showSuggestions() {
+    const input = document.getElementById("searchInput");
+    const suggestionBox = document.getElementById("suggestions");
+    const query = input.value.trim().toLowerCase();
+    suggestionBox.innerHTML = "";
+
+    if (query === "") return;
+
+    const matches = Object.keys(corpCodeMap).filter(name => name.toLowerCase().includes(query));
+    matches.forEach(name => {
+      const div = document.createElement("div");
+      div.className = "suggestion-item";
+      div.textContent = name;
+      div.onclick = () => {
+        input.value = name;
+        suggestionBox.innerHTML = "";
+      };
+      suggestionBox.appendChild(div);
+    });
+  }
+
   loadData();
+  loadCorpCodes();
 </script>
 
 </body>
