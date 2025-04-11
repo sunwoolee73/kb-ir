@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>📊 통합 IR 공시 검색 + 대시보드</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
+    header { background: #007bff; color: white; padding: 20px; text-align: center; }
+    h1 { margin: 0; }
+    .container { padding: 20px; }
+    .section-title { font-size: 20px; margin: 20px 0 10px; color: #333; }
+
+    .search-box { text-align: center; margin-bottom: 30px; position: relative; }
+    #searchInput {
+      padding: 8px; width: 240px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
+    }
+    button {
+      padding: 8px 14px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;
+    }
+
+    .card-container {
+      display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;
+    }
+    .card {
+      width: 260px; background: white; padding: 15px; border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: 0.3s ease;
+    }
+    .card:hover { transform: scale(1.03); }
+    .corp-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 5px; }
+    .report-name { color: #555; }
+    .date { font-size: 14px; color: #777; margin-top: 5px; }
+
+    iframe {
+      border: none;
+      width: 100%;
+      height: 1400px;
+      margin-top: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📄 기업 공시 정보 검색 + 📊 IR 통계 대시보드</h1>
+</header>
+
+<div class="container">
+  <div class="section-title">🔍 기업 공시 검색</div>
+  <div class="search-box">
+    <input id="searchInput" type="text" placeholder="예: 삼성전자" />
+    <button onclick="searchCorp()">검색</button>
+  </div>
+  <div id="resultCards" class="card-container"></div>
+
+  <div class="section-title">📈 IR 통계 대시보드</div>
+  <iframe src="https://sunwoolee73.github.io/kb-ir/stat_dashboard_filter.html"></iframe>
+</div>
+
+<script>
+const DART_KEY = "fc43af46c1bc915dce2fc6e156971f2569e603b3";
+let corpCodeMap = {};
+
+async function loadCorpCodes() {
+  const res = await fetch("https://sunwoolee73.github.io/kb-ir/corp_codes.json");
+  const data = await res.json();
+  corpCodeMap = {};
+  data.forEach(item => corpCodeMap[item.corp_name] = item.corp_code);
+}
+
+function formatDate(str) {
+  return `${str.slice(0,4)}-${str.slice(4,6)}-${str.slice(6,8)}`;
+}
+
+function showCards(data, corp_name) {
+  const container = document.getElementById("resultCards");
+  container.innerHTML = "";
+  data.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="corp-name">${corp_name}</div>
+      <div class="report-name">${item.report_nm}</div>
+      <div class="date">📅 ${formatDate(item.rcept_dt)}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+async function searchCorp() {
+  const query = document.getElementById("searchInput").value.trim();
+  const container = document.getElementById("resultCards");
+  container.innerHTML = "";
+
+  if (!query || !corpCodeMap[query]) {
+    container.innerHTML = "<p style='text-align:center;'>해당 기업을 찾을 수 없습니다.</p>";
+    return;
+  }
+
+  const corp_code = corpCodeMap[query];
+  const today = new Date();
+  const past = new Date(today.getTime() - 1000 * 60 * 60 * 24 * 15);
+  const bgn_de = past.toISOString().slice(0,10).replace(/-/g, '');
+  const end_de = today.toISOString().slice(0,10).replace(/-/g, '');
+
+  const apiUrl = `https://opendart.fss.or.kr/api/list.json?crtfc_key=${DART_KEY}&corp_code=${corp_code}&bgn_de=${bgn_de}&end_de=${end_de}&page_count=10`;
+
+  try {
+    const res = await fetch(apiUrl);
+    const result = await res.json();
+    if (result.status === "000" && result.list.length > 0) {
+      showCards(result.list, query);
+    } else {
+      container.innerHTML = "<p style='text-align:center;'>최근 공시가 없습니다.</p>";
+    }
+  } catch (e) {
+    container.innerHTML = "<p style='text-align:center;'>❗ 오류 발생: OpenDART 요청 실패</p>";
+  }
+}
+
+loadCorpCodes();
+</script>
+
+</body>
+</html>
