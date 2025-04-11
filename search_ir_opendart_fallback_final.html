@@ -2,14 +2,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>기업 공시 정보 검색</title>
+  <meta charset="UTF-8">
+  <title>📑 기업 공시 정보 검색</title>
   <style>
     body { font-family: 'Noto Sans KR', sans-serif; background: #f9f9f9; padding: 20px; }
     h1 { text-align: center; color: #333; }
     .search-box { text-align: center; margin-bottom: 20px; }
     input[type="text"] {
-      padding: 8px; width: 200px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
+      padding: 8px; width: 250px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc;
     }
     button {
       padding: 8px 14px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;
@@ -18,7 +18,7 @@
       display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;
     }
     .card {
-      width: 260px; background: white; padding: 15px; border-radius: 12px;
+      width: 240px; background: white; padding: 15px; border-radius: 12px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: 0.3s ease;
     }
     .card:hover { transform: scale(1.03); }
@@ -29,7 +29,7 @@
 </head>
 <body>
 
-<h1>📄 기업 공시 정보 검색</h1>
+<h1>📑 기업 공시 정보 검색</h1>
 <div class="search-box">
   <input id="searchInput" type="text" placeholder="예: 삼성전자" />
   <button onclick="searchCorp()">검색</button>
@@ -40,8 +40,12 @@
   let allData = [];
 
   async function loadData() {
-    const res = await fetch("sample_data_extended.json");
-    allData = await res.json();
+    try {
+      const res = await fetch("sample_data_extended.json");
+      allData = await res.json();
+    } catch (error) {
+      console.error("로컬 데이터 로딩 실패:", error);
+    }
   }
 
   function formatDate(str) {
@@ -51,7 +55,18 @@
   function showCards(data) {
     const container = document.getElementById("resultCards");
     container.innerHTML = "";
+
+    const uniqueMap = new Map();
     data.forEach(item => {
+      const key = `${item.corp_name}_${item.report_nm}_${item.rcept_dt}`;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item);
+      }
+    });
+
+    const uniqueData = Array.from(uniqueMap.values());
+
+    uniqueData.forEach(item => {
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
@@ -63,43 +78,46 @@
     });
   }
 
-  async function fetchCorpCode(query) {
-    const res = await fetch("corp_codes.json");
-    const codes = await res.json();
-    const match = codes.find(c => query.includes(c.corp_name));
-    return match ? match.corp_code : null;
-  }
-
-  async function fetchOpenDART(corpCode) {
-    const apiKey = "fc43af46c1bc915dce2fc6e156971f2569e603b3";  // 사용자 DART API KEY
-    const url = `https://opendart.fss.or.kr/api/list.json?crtfc_key=${apiKey}&corp_code=${corpCode}&page_count=3`;
-    const res = await fetch(url);
-    const result = await res.json();
-    if (result.list) {
-      const simplified = result.list.map(item => {
-        return {
-          corp_name: item.corp_name,
-          report_nm: item.report_nm,
-          rcept_dt: item.rcept_dt
-        };
-      });
-      showCards(simplified);
-    }
-  }
-
   async function searchCorp() {
     const query = document.getElementById("searchInput").value.trim();
+    const container = document.getElementById("resultCards");
+    container.innerHTML = "";
+
     if (!query) return;
 
-    const results = allData.filter(item => item.corp_name.includes(query));
-    if (results.length > 0) {
-      showCards(results);
+    const filtered = allData.filter(item => item.corp_name.includes(query));
+    if (filtered.length > 0) {
+      showCards(filtered);
     } else {
-      const corpCode = await fetchCorpCode(query);
-      if (corpCode) {
-        fetchOpenDART(corpCode);
-      } else {
-        document.getElementById("resultCards").innerHTML = "<p>공시 정보를 찾을 수 없습니다.</p>";
+      // fallback: OpenDART API
+      try {
+        const corpCodeRes = await fetch("corp_codes.json");
+        const corpCodes = await corpCodeRes.json();
+        const match = corpCodes.find(c => c.corp_name.includes(query));
+        if (!match) {
+          container.innerHTML = "<p>일치하는 기업이 없습니다.</p>";
+          return;
+        }
+
+        const apiKey = "fc43af46c1bc915dce2fc6e156971f2569e603b3";
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const url = `https://opendart.fss.or.kr/api/list.json?crtfc_key=${apiKey}&corp_code=${match.corp_code}&bgn_de=20240401&end_de=${today}&page_count=30`;
+
+        const apiRes = await fetch(url);
+        const json = await apiRes.json();
+        if (json.status === "000" && json.list) {
+          const parsed = json.list.map(i => ({
+            corp_name: match.corp_name,
+            report_nm: i.report_nm,
+            rcept_dt: i.rcept_dt
+          }));
+          showCards(parsed);
+        } else {
+          container.innerHTML = "<p>실시간 공시 정보가 없습니다.</p>";
+        }
+      } catch (err) {
+        container.innerHTML = "<p>실시간 정보를 불러오지 못했습니다.</p>";
+        console.error(err);
       }
     }
   }
